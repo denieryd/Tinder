@@ -2,8 +2,8 @@
 This application requests user data VK (via protocol oauth).
 Then, based on the data that goes into the application, Tinder will select the right partner for you. 
 The selection is based on the analysis of the VK profile (common interests, common music, mutual friends, etc.)
-## Setup and works
-* before start you need install requirements
+## Setup
+* before starting you need install requirements
 ```bash
 $ pip install -r requirements.txt
 ```
