@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # This is tinder
 This application requests user data VK (via protocol oauth).
 Then, based on the data that goes into the application, Tinder will select the right partner for you. 
@@ -32,6 +31,4 @@ And next you will see result of app
 
 * To run tests, you just need to activate the “tests/tests.py” file. Data for tests you must 
 add to the file "tests/date.txt". The data substitution pattern is listed in the file itself.
-=======
-# Tinder
->>>>>>> 56b1fb6f5948cd7018d1a513b3b51e984006d671
+
