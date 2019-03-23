@@ -264,7 +264,6 @@ class MainUser(TinderUser):
 
         print('There are search settings save only for session')
         if debug:
-            print(PATH_TO_DATA_FOR_TEST)
             with open(PATH_TO_DATA_FOR_TEST, encoding='utf8') as f:
                 f.readline()
                 self.desired_age_from = f.readline()

@@ -1,11 +1,11 @@
 from vk.vk_machinery import VkMachinery
 from tinder_users import TinderUser, MainUser
-from config.config_app import ROOT_OF_PROJECT
+from config.config_app import BASE_DIR
 
 import unittest
 import os
 
-os.chdir(ROOT_OF_PROJECT)
+os.chdir(BASE_DIR)
 VkMachinery.initialize_vk_api(debug=True)
 
 
