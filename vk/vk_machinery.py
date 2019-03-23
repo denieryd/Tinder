@@ -1,4 +1,4 @@
-from config.config_app import SERVICE_TOKEN, VERSION_VK_API, PATH_TO_DATA_FOR_TEST, OAUTH_LINK, DEBUG
+from config.config_app import SERVICE_TOKEN, VERSION_VK_API, PATH_TO_DATA_FOR_TEST, OAUTH_LINK
 from utils import reg_exp_pattern_access_token, StrOrInt, retry_on_error, RetryException
 from typing import Dict, List, Union
 
