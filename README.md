@@ -2,16 +2,24 @@
 This application requests user data VK (via protocol oauth).
 Then, based on the data that goes into the application, Tinder will select the right partner for you. 
 The selection is based on the analysis of the VK profile (common interests, common music, mutual friends, etc.)
-
-* To run, you need to run the "main.py" file. Follow the prompts.
+## Setup and works
+* before start you need install requirements
+```bash
+$ pip install -r requirements.txt
+```
+* For running the app, you need to run the "main.py"
+```bash
+$ python main.py
+```
+and follow the next prompts
 ```text
 1.Follow this link: https://oauth.vk.com/authorize?client_id=5490057&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=friends,photos,groups,pages&response_type=token&v=5.52
 2.Confirm the intentions
 3.Copy the address of the browser string and paste it here, please: 
  ```
-Next step is to enter token from browser search line: 
+Next step is to enter token from browser search line to dialog window: 
 ```text
-3. ... and paste it here, please:  https://oauth.vk.com/blank.html#access_token=your token here
+3. ... and paste it here, please: https://oauth.vk.com/blank.html#access_token=your token here
 ```
 
 Next step is following the prompts
