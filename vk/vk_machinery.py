@@ -43,7 +43,7 @@ class VkMachinery:
             return params
 
     @classmethod
-    @retry_on_error(5)
+    @retry_on_error(4)
     def send_request(cls, method: str, params_of_query: Dict[str, str] = None):
         """
         Send request to the VK API and return a result
@@ -54,6 +54,7 @@ class VkMachinery:
         """
         params_of_query = cls._get_updated_params(params_of_query)
 
+        time.sleep(0.1)
         req = requests.get(f'https://api.vk.com/method/{method}', params=params_of_query).json()
         if 'error' in req and req['error']['error_code'] == 6:
             # Error 6 is to many request.There is can be more errors
@@ -63,6 +64,7 @@ class VkMachinery:
 
     @classmethod
     def users_search(cls, config: Dict[str, StrOrInt]) -> List[Dict]:
+        print('SEEARCH')
         """
         Send request user.search to VK API and return its result
 
@@ -98,8 +100,6 @@ class VkMachinery:
                 opened_tinder_user_ids.append(str(searched_user['id']))
 
         get_users_param = {
-            'access_token': SERVICE_TOKEN,
-            'v': VERSION_VK_API,
             'user_ids': ','.join(opened_tinder_user_ids),
             'fields': 'sex,bdate,city,country,activities,interests,music,movies,books'
         }
