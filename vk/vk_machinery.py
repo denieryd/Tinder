@@ -7,7 +7,6 @@ import requests
 import time
 
 
-# todo: modules organization
 class VkMachinery:
     _version_vk_api = VERSION_VK_API
     _access_token_of_user = None

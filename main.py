@@ -167,7 +167,7 @@ def run_app():
 
 if __name__ == '__main__':
     create_db()
-    # There is main point of program. And here we initialize VkMachinery.So those who will import VkMachinery
+    # There is entry point of program. And here we initialize VkMachinery.So those who will import VkMachinery
     # will use it initialized
     VkMachinery.initialize_vk_api(debug=DEBUG)
     run_app()
