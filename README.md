@@ -7,7 +7,16 @@ The selection is based on the analysis of the VK profile (common interests, comm
 ```bash
 $ pip install -r requirements.txt
 ```
+* To run tests, you just need to activate the “tests/tests.py” file. Data for tests you must 
+add to the file "tests/date.txt". The data substitution pattern is listed in the file itself.
+
+* requirements for database: you should have a database
+( in this repository it is called "tinderdb"), role of database 
+(in this repository you role is called "tinderuser"). 
+You can change every param in "config/config_app"
+In config this params are colled like "DB_NAME" and "DB_USER"
 * For running the app, you need to run the "main.py"
+## Example
 ```bash
 $ python main.py
 ```
@@ -35,8 +44,3 @@ And next you will see result of app
 2.Alexander Polyarny, vk:https://vk.com/id258482625, photos:...
 ...
 ```
-
-
-* To run tests, you just need to activate the “tests/tests.py” file. Data for tests you must 
-add to the file "tests/date.txt". The data substitution pattern is listed in the file itself.
-

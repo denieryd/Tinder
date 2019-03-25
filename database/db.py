@@ -127,3 +127,29 @@ def get_last_desired_age_to(user_id: int) -> int:
                         (user_id,))
 
             return cur.fetchone()[0]
+
+
+def get_current_offset(tinder_user_id: int) -> int:
+    """
+    Gives current_offset a particular tinder user for search from table "last_run_state"
+    """
+
+    with pg.connect(dbname=DB_NAME, user=DB_USER) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""SELECT current_offset FROM last_run_state WHERE vk_id=(%s)""", (tinder_user_id,))
+
+            return cur.fetchone()[0]
+
+
+def update_current_offset(offset: int, tinder_user_id: int) -> None:
+    """
+    Updates current_offset for particular user in table "last_run_state"
+
+    :param offset: new value of offset to setup
+    :param tinder_user_id: id of particular tinder_user
+    """
+
+    with pg.connect(dbname=DB_NAME, user=DB_USER) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""UPDATE last_run_state SET current_offset=(%s) WHERE vk_id=(%s)""",
+                        (int(offset), int(tinder_user_id)))

@@ -1,6 +1,6 @@
 from vk.vk_machinery import VkMachinery
 from tinder_users import TinderUser, MainUser
-from config.config_app import PATH_TO_OUTPUT_RESULT, DEBUG
+from config.config_app import PATH_TO_OUTPUT_RESULT
 from database.db import create_db
 from database.db import insert_result_to_db, add_to_black_list, add_to_favorite_list
 
@@ -10,16 +10,17 @@ from typing import Dict, List
 import json
 
 
-def tact_of_app(main_user) -> List[Dict]:
+def tact_of_app(main_user, tinder_users: List) -> List[Dict]:
     """
     Do one round of the Tinder app.
 
     :param main_user: Instance of class MainUser(TinderUser)
+    :param tinder_users: List of instances of Tinder User
     """
 
     list_tinder_users = []
 
-    for tinder_user in TinderUser.get_tinder_users_for_one_round(main_user.count_for_search):
+    for tinder_user in tinder_users:
         tinder_user.calculate_matching_score(main_user)
         list_tinder_users.append(tinder_user)
 
@@ -45,14 +46,11 @@ def output_tinder_users(data_of_top10_matching: List[Dict]) -> None:
     :param data_of_top10_matching: List of data of Tinder Users
     """
 
-    for ind, data_of_user in enumerate(data_of_top10_matching):
-        photos = ''
+    for ind, data_of_user in enumerate(data_of_top10_matching, 1):
+        links_photos = ','.join(data_of_user['photos'])
 
-        for i, ph_link in enumerate(data_of_user['photos']):
-            photos = photos + 'photos: {},'.format(ph_link)
-
-        print(f'{ind + 1}.{data_of_user["first_name"]} {data_of_user["last_name"]}, '
-              f'vk:{data_of_user["vk_link"]}, {photos}')
+        print(f'{ind}.{data_of_user["first_name"]} {data_of_user["last_name"]}, '
+              f'vk:{data_of_user["vk_link"]}, Photos: {links_photos}')
 
 
 def interface_for_black_list(data_of_persons: List[Dict]) -> None:
@@ -89,19 +87,18 @@ def _interface_to_add_list(data_of_persons: List[Dict], explanatory_line: str) -
     :param explanatory_line: A string that explains what we will do with the selected person.
     """
 
-    enumerated_person = list(enumerate(data_of_persons))
     while True:
         chosen_id = input(f'{explanatory_line} '
-                          f'from {enumerated_person[0][0] + 1} to {enumerated_person[-1][0] + 1}, please: ')
+                          f'from 1 to {len(data_of_persons)}, please: ')
         try:
-            chosen_id = int(chosen_id) - 1
-            if chosen_id > enumerated_person[-1][0] or chosen_id < enumerated_person[0][0]:
+            chosen_id = int(chosen_id)
+            if chosen_id > len(data_of_persons) or chosen_id < 1:
                 raise ValueError
             break
         except ValueError:
             print('You did wrong, repeat please')
 
-    return chosen_id
+    return chosen_id - 1
 
 
 def output_result_to_json(data_of_top10_matching: List[Dict]) -> None:
@@ -115,23 +112,24 @@ def output_result_to_json(data_of_top10_matching: List[Dict]) -> None:
         json.dump(data_of_top10_matching, json_output, indent=2)
 
 
-def run_app():
-    main_user = MainUser()
+def run_app(vk_client):
+    main_user = MainUser(vk_client=vk_client)
     main_user_config = main_user.get_search_config_obj()
 
     turn_on_the_app = True
     while True and turn_on_the_app:
         main_user_config['offset_for_search'] += main_user.count_for_search
-        searched_tinder_users = VkMachinery.users_search(config=main_user_config)
+        searched_tinder_users = vk_client.users_search(config=main_user_config)
 
-        processed_data_of_tinder_users = VkMachinery.get_processed_data_of_tinder_users(
+        processed_data_of_tinder_users = vk_client.get_processed_data_of_tinder_users(
             searched_users=searched_tinder_users)
 
+        list_of_tinder_users = []
         for data_of_tinder_user in processed_data_of_tinder_users:
-            TinderUser(init_obj=data_of_tinder_user)
+            list_of_tinder_users.append(TinderUser(vk_client=vk_client, init_obj=data_of_tinder_user))
 
         main_user.update_search_offset()
-        data_of_top10_matching = tact_of_app(main_user)
+        data_of_top10_matching = tact_of_app(main_user=main_user, tinder_users=list_of_tinder_users)
         output_tinder_users(data_of_top10_matching)
 
         while True:
@@ -167,7 +165,10 @@ def run_app():
 
 if __name__ == '__main__':
     create_db()
-    # There is entry point of program. And here we initialize VkMachinery.So those who will import VkMachinery
+    # There is entry point of program. And here we initialize instance of VkMachinery.
+    # So those who will import VkMachinery
     # will use it initialized
-    VkMachinery.initialize_vk_api(debug=DEBUG)
-    run_app()
+
+    vk_client = VkMachinery()
+    vk_client.initialize_vk_api()
+    run_app(vk_client=vk_client)

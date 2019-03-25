@@ -1,13 +1,11 @@
-from vk.vk_machinery import VkMachinery
 from config.config_app import POINT_OF_AGE, POINT_OF_MUSIC, POINT_OF_BOOKS, \
     POINT_OF_FRIEND_UNIT, POINT_OF_GROUP_UNIT, DEBUG
-from config.config_app import SERVICE_TOKEN, DB_USER, DB_NAME, PATH_TO_DATA_FOR_TEST
+from config.config_app import SERVICE_TOKEN, PATH_TO_DATA_FOR_TEST
 from database import db
 
 from typing import Dict, List
 
 import datetime
-import psycopg2 as pg
 
 
 class TinderUser:
@@ -15,11 +13,8 @@ class TinderUser:
     Common user class in the application
     """
 
-    # todo: there is a memory leak (if use this app too much time)
-    _instances_of_tinder_user = []
-
-    def __init__(self, init_obj: Dict = None, service_token=SERVICE_TOKEN):
-        self._instances_of_tinder_user.append(self)
+    def __init__(self, vk_client, init_obj: Dict = None, service_token: str = SERVICE_TOKEN):
+        self.vk_client = vk_client
         self.service_token = service_token
         self._tinder_user_id = None
 
@@ -80,8 +75,8 @@ class TinderUser:
         """
 
         params = {'user_id': self._tinder_user_id}
-        return VkMachinery.send_request(method='friends.get',
-                                        params_of_query=params)['response']['items']
+        return self.vk_client.send_request(method='friends.get',
+                                           params_of_query=params)['response']['items']
 
     def get_group_list(self):
         """
@@ -91,8 +86,8 @@ class TinderUser:
         """
 
         params = {'user_id': self._tinder_user_id}
-        return VkMachinery.send_request(method='users.getSubscriptions',
-                                        params_of_query=params)['response']['groups']['items']
+        return self.vk_client.send_request(method='users.getSubscriptions',
+                                           params_of_query=params)['response']['groups']['items']
 
     def calculate_matching_score(self, target_user) -> None:
         """
@@ -177,7 +172,7 @@ class TinderUser:
 
         params = {'owner_id': self._tinder_user_id, 'album_id': 'profile', 'extended': 1}
 
-        photos = VkMachinery.send_request(method='photos.get', params_of_query=params)['response']['items']
+        photos = self.vk_client.send_request(method='photos.get', params_of_query=params)['response']['items']
         photos.sort(key=lambda photo: int(photo['likes']['count']))
 
         size = 0
@@ -220,8 +215,8 @@ class MainUser(TinderUser):
     The main class in our application. For it, we will search for similar users, etc.
     """
 
-    def __init__(self, count_for_search: int = 15, debug=DEBUG):
-        super().__init__()
+    def __init__(self, vk_client, count_for_search: int = 15, debug=DEBUG):
+        super().__init__(vk_client=vk_client)
         self._user_token = None
 
         self.screen_name = None
@@ -269,6 +264,7 @@ class MainUser(TinderUser):
                 self.desired_age_from = f.readline()
                 self.desired_age_to = f.readline()
         else:
+            print('You can skip follow prompts.Then we will get values from last run ')
             self.desired_age_from = input('Give number for desired min of search age: ')
             self.desired_age_to = input('Give number for desired max of search age: ')
 
@@ -280,11 +276,7 @@ class MainUser(TinderUser):
             self.desired_age_from = int(self.desired_age_from)
             self.desired_age_to = int(self.desired_age_to)
 
-        with pg.connect(dbname=DB_NAME, user=DB_USER) as conn:
-            with conn.cursor() as cur:
-                cur.execute("""SELECT current_offset FROM last_run_state WHERE vk_id=(%s)""", (self._tinder_user_id,))
-
-                self.offset_for_search = (cur.fetchone()[0])
+        self.offset_for_search = db.get_current_offset(self._tinder_user_id)
 
     def _init_default_params(self, profile_info: Dict) -> None:
         """
@@ -295,13 +287,13 @@ class MainUser(TinderUser):
         """
 
         self._tinder_user_id = profile_info['id']
-        self.first_name = profile_info['first_name']
-        self.last_name = profile_info['last_name']
-        self.sex = profile_info['sex']
-        self.city = profile_info['city']['id']
-        self.movies = profile_info['movies']
-        self.music = profile_info['music']
-        self.books = profile_info['books']
+        self.first_name = profile_info.get('first_name', 'first name')
+        self.last_name = profile_info.get('last_name', 'last name')
+        self.sex = profile_info.get('sex', 'unknown gender')
+        self.city = '' if 'city' not in profile_info else profile_info['city']['id']
+        self.movies = profile_info.get('movies', '')
+        self.music = profile_info.get('music', '')
+        self.books = profile_info.get('books', '')
         self.age = self._calculate_age(datetime.datetime.strptime(profile_info['bdate'], '%d.%m.%Y'))
 
         self.friends = self.get_friend_list()
@@ -318,19 +310,15 @@ class MainUser(TinderUser):
 
         items_of_request = 0
 
-        return VkMachinery.send_request(method='users.get',
-                                        params_of_query=params_of_request)['response'][items_of_request]
+        return self.vk_client.send_request(method='users.get',
+                                           params_of_query=params_of_request)['response'][items_of_request]
 
     def update_search_offset(self) -> None:
         """
         Update current offset for search in database
         """
 
-        with pg.connect(dbname=DB_NAME, user=DB_USER) as conn:
-            with conn.cursor() as cur:
-                self.offset_for_search += self.count_for_search
-                cur.execute("""UPDATE last_run_state SET current_offset=(%s) WHERE vk_id=(%s)""",
-                            (int(self.offset_for_search), int(self._tinder_user_id)))
+        db.update_current_offset(self.offset_for_search, self._tinder_user_id)
 
     def get_search_config_obj(self) -> Dict:
         """

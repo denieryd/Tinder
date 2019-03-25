@@ -1,5 +1,5 @@
-from config.config_app import SERVICE_TOKEN, VERSION_VK_API, PATH_TO_DATA_FOR_TEST, OAUTH_LINK
-from utils import reg_exp_pattern_access_token, StrOrInt, retry_on_error, RetryException
+from config.config_app import VERSION_VK_API, PATH_TO_DATA_FOR_TEST, OAUTH_LINK
+from utils import reg_exp_pattern_access_token, StrOrInt, retry_on_error, RetryException, VkException
 from typing import Dict, List, Union
 
 import re
@@ -9,15 +9,15 @@ import time
 
 class VkMachinery:
     _version_vk_api = VERSION_VK_API
-    _access_token_of_user = None
 
-    @classmethod
-    def initialize_vk_api(cls, debug):
-        access_token = cls._get_access_token(debug=debug)
-        VkMachinery._access_token_of_user = access_token
+    def __init__(self):
+        self._access_token_of_user = None
 
-    @classmethod
-    def _get_access_token(cls, debug) -> Union[str, bytes]:
+    def initialize_vk_api(self, debug=False):
+        access_token = self._get_access_token(debug=debug)
+        self._access_token_of_user = access_token
+
+    def _get_access_token(self, debug) -> Union[str, bytes]:
         """
         It get users's token and put it in field of instance
         """
@@ -32,19 +32,17 @@ class VkMachinery:
 
         return re.match(reg_exp_pattern_access_token, link_after_oauth).group('user_token').strip()
 
-    @classmethod
-    def _get_updated_params(cls, params: Dict[str, str]) -> Dict[str, str]:
-        require_params = {'v': cls._version_vk_api,
-                          'access_token': cls._access_token_of_user}
+    def _get_updated_params(self, params: Dict[str, str]) -> Dict[str, str]:
+        require_params = {'v': self._version_vk_api,
+                          'access_token': self._access_token_of_user}
         if params is None:
             return require_params
         else:
             params.update(require_params)
             return params
 
-    @classmethod
     @retry_on_error(4)
-    def send_request(cls, method: str, params_of_query: Dict[str, str] = None):
+    def send_request(self, method: str, params_of_query: Dict[str, str] = None):
         """
         Send request to the VK API and return a result
 
@@ -52,19 +50,18 @@ class VkMachinery:
         :param dict params_of_query: additional params for request
         :return: result of requests.get(...).json()
         """
-        params_of_query = cls._get_updated_params(params_of_query)
+        params_of_query = self._get_updated_params(params=params_of_query)
 
-        time.sleep(0.1)
         req = requests.get(f'https://api.vk.com/method/{method}', params=params_of_query).json()
         if 'error' in req and req['error']['error_code'] == 6:
             # Error 6 is to many request.There is can be more errors
-            time.sleep(0.5)
+            time.sleep(0.2)
             raise RetryException
+        elif 'error' in req:
+            raise VkException(req['error']['error_msg'])
         return req
 
-    @classmethod
-    def users_search(cls, config: Dict[str, StrOrInt]) -> List[Dict]:
-        print('SEEARCH')
+    def users_search(self, config: Dict[str, StrOrInt]) -> List[Dict]:
         """
         Send request user.search to VK API and return its result
 
@@ -77,14 +74,13 @@ class VkMachinery:
                              f'age_from={config["desired_age_from"]},age_to={config["desired_age_to"]}',
                              'offset': config['offset_for_search']}
 
-        params_of_request = cls._get_updated_params(params_of_request)
+        params_of_request = self._get_updated_params(params=params_of_request)
         print('Waiting please.. We are searching')
 
-        req = cls.send_request(method='users.search', params_of_query=params_of_request)
+        req = self.send_request(method='users.search', params_of_query=params_of_request)
         return req['response']['items']
 
-    @classmethod
-    def get_processed_data_of_tinder_users(cls, searched_users: List[Dict]) -> List[Dict]:
+    def get_processed_data_of_tinder_users(self, searched_users: List[Dict]) -> List[Dict]:
         """
         Get List of Tinder users and return it processed
 
@@ -104,5 +100,5 @@ class VkMachinery:
             'fields': 'sex,bdate,city,country,activities,interests,music,movies,books'
         }
 
-        data_of_tinder_users = cls.send_request('users.get', params_of_query=get_users_param)['response']
+        data_of_tinder_users = self.send_request('users.get', params_of_query=get_users_param)['response']
         return data_of_tinder_users

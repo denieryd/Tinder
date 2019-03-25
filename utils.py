@@ -9,7 +9,11 @@ reg_exp_pattern_access_token = re.compile(
 StrOrInt = TypeVar('StrOrInt', str, int)
 
 
-class RetryException(BaseException):
+class RetryException(Exception):
+    pass
+
+
+class VkException(Exception):
     pass
 
 
@@ -22,7 +26,7 @@ def retry_on_error(arg: int = 5):
                 try:
                     return func(*args, **kwargs)
                 except RetryException:
-                    print('Please wait. There was an error, we are re-sending your request')
+                    print('Please wait.We are re-sending your request')
                     if countdown <= 0:
                         break
                     countdown -= 1
