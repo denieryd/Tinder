@@ -101,6 +101,7 @@ def _interface_to_add_list(data_of_persons: List[Dict], explanatory_line: str) -
     return chosen_id - 1
 
 
+# todo: favorite users exist, but never use in app, we will fix it
 def output_result_to_json(data_of_top10_matching: List[Dict]) -> None:
     """
     Save result of last search to output.json in current working directory
@@ -117,18 +118,27 @@ def run_app(vk_client):
     main_user_config = main_user.get_search_config_obj()
 
     turn_on_the_app = True
-    while True and turn_on_the_app:
+    while turn_on_the_app:
         main_user_config['offset_for_search'] += main_user.count_for_search
+
         searched_tinder_users = vk_client.users_search(config=main_user_config)
 
         processed_data_of_tinder_users = vk_client.get_processed_data_of_tinder_users(
-            searched_users=searched_tinder_users)
+            searched_users=searched_tinder_users, main_user_config=main_user_config)
+
+        while not processed_data_of_tinder_users:  # from example all received users with closed profiles
+            # we have no any user so we have to repeat request
+
+            main_user_config['offset_for_search'] += main_user.count_for_search
+            searched_tinder_users = vk_client.users_search(config=main_user_config)
+            processed_data_of_tinder_users = vk_client.get_processed_data_of_tinder_users(
+                searched_users=searched_tinder_users, main_user_config=main_user_config)
 
         list_of_tinder_users = []
         for data_of_tinder_user in processed_data_of_tinder_users:
             list_of_tinder_users.append(TinderUser(vk_client=vk_client, init_obj=data_of_tinder_user))
 
-        main_user.update_search_offset()
+        main_user.update_search_offset(main_user_config['offset_for_search'])
         data_of_top10_matching = tact_of_app(main_user=main_user, tinder_users=list_of_tinder_users)
         output_tinder_users(data_of_top10_matching)
 

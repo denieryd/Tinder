@@ -143,8 +143,9 @@ class TinderUser:
         :return: score of similarity
         """
 
-        other_books = {book[:-2] for book in set(other_books.split())}
-        other_books2 = {other_book[:-2] for other_book in set(self.books.split())}
+        other_books = set(other_books.replace(',', '').replace('\"', '').strip().split())
+
+        other_books2 = set(self.books.replace(',', '').replace('\"', '').strip().split())
         return POINT_OF_BOOKS * len(other_books.intersection(other_books2))
 
     def _get_points_of_age(self, age_from: int, age_to: int) -> float:
@@ -194,17 +195,6 @@ class TinderUser:
             'vk_link': f'https://vk.com/id{self._tinder_user_id}',
             'photos': self.top3_photos
         }
-
-    @classmethod
-    def get_tinder_users_for_one_round(cls, quantity: int) -> List:
-        """
-        It gives last "quantity" Tinder Users
-
-        :param quantity: quantity of Tinder Users
-        :return: List of Tinder users
-        """
-
-        return cls._instances_of_tinder_user[-quantity:]
 
     def __repr__(self):
         return f'Tinder User: name: {self.first_name}, uid: {self._tinder_user_id}'
@@ -264,14 +254,18 @@ class MainUser(TinderUser):
                 self.desired_age_from = f.readline()
                 self.desired_age_to = f.readline()
         else:
-            print('You can skip follow prompts.Then we will get values from last run ')
+            print('You can skip follow prompts.Then we will get values from last running ')
             self.desired_age_from = input('Give number for desired min of search age: ')
             self.desired_age_to = input('Give number for desired max of search age: ')
 
             if not self.desired_age_from:
                 self.desired_age_from = self.get_desired_age_from_from_db()
+            else:
+                db.update_desired_age_from(int(self.desired_age_from), self._tinder_user_id)
             if not self.desired_age_to:
                 self.desired_age_to = self.get_desired_age_to_from_db()
+            else:
+                db.update_desired_age_to(int(self.desired_age_to), self._tinder_user_id)
 
             self.desired_age_from = int(self.desired_age_from)
             self.desired_age_to = int(self.desired_age_to)
@@ -313,12 +307,12 @@ class MainUser(TinderUser):
         return self.vk_client.send_request(method='users.get',
                                            params_of_query=params_of_request)['response'][items_of_request]
 
-    def update_search_offset(self) -> None:
+    def update_search_offset(self, offset_for_setup) -> None:
         """
         Update current offset for search in database
         """
 
-        db.update_current_offset(self.offset_for_search, self._tinder_user_id)
+        db.update_current_offset(offset_for_setup, self._tinder_user_id)
 
     def get_search_config_obj(self) -> Dict:
         """

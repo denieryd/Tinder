@@ -111,6 +111,7 @@ def get_last_desired_age_from(user_id: int) -> int:
             cur.execute("""SELECT desired_age_from FROM last_run_state WHERE vk_id=(%s)""",
                         (user_id,))
 
+
             return cur.fetchone()[0]
 
 
@@ -123,7 +124,7 @@ def get_last_desired_age_to(user_id: int) -> int:
 
     with pg.connect(dbname=DB_NAME, user=DB_USER) as conn:
         with conn.cursor() as cur:
-            cur.execute("""SELECT desired_age_from FROM last_run_state WHERE vk_id=(%s)""",
+            cur.execute("""SELECT desired_age_to FROM last_run_state WHERE vk_id=(%s)""",
                         (user_id,))
 
             return cur.fetchone()[0]
@@ -153,3 +154,32 @@ def update_current_offset(offset: int, tinder_user_id: int) -> None:
         with conn.cursor() as cur:
             cur.execute("""UPDATE last_run_state SET current_offset=(%s) WHERE vk_id=(%s)""",
                         (int(offset), int(tinder_user_id)))
+
+
+def update_desired_age_from(desired_age_from: int, tinder_user_id: int) -> None:
+    """
+    Updates desired_age_from for particular user in table "last_run_state"
+
+    :param desired_age_from: new value of desired_age_from to setup
+    :param tinder_user_id: id of particular tinder_user
+    """
+
+    with pg.connect(dbname=DB_NAME, user=DB_USER) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""UPDATE last_run_state SET desired_age_from=(%s) WHERE vk_id=(%s)""",
+                        (int(desired_age_from), int(tinder_user_id)))
+
+
+# todo: we can make only 1 method for update these fields
+def update_desired_age_to(desired_age_to: int, tinder_user_id: int) -> None:
+    """
+    Updates desired_age_from for particular user in table "last_run_state"
+
+    :param desired_age_to: new value of desired_age_from to setup
+    :param tinder_user_id: id of particular tinder_user
+    """
+
+    with pg.connect(dbname=DB_NAME, user=DB_USER) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""UPDATE last_run_state SET desired_age_to=(%s) WHERE vk_id=(%s)""",
+                        (int(desired_age_to), int(tinder_user_id)))

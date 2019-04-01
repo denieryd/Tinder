@@ -26,7 +26,7 @@ def retry_on_error(arg: int = 5):
                 try:
                     return func(*args, **kwargs)
                 except RetryException:
-                    print('Please wait.We are re-sending your request')
+                    print('Please wait.We are sending request')
                     if countdown <= 0:
                         break
                     countdown -= 1

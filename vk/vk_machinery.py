@@ -1,6 +1,7 @@
 from config.config_app import VERSION_VK_API, PATH_TO_DATA_FOR_TEST, OAUTH_LINK
 from utils import reg_exp_pattern_access_token, StrOrInt, retry_on_error, RetryException, VkException
 from typing import Dict, List, Union
+from datetime import datetime
 
 import re
 import requests
@@ -80,11 +81,29 @@ class VkMachinery:
         req = self.send_request(method='users.search', params_of_query=params_of_request)
         return req['response']['items']
 
-    def get_processed_data_of_tinder_users(self, searched_users: List[Dict]) -> List[Dict]:
+    def _more_process(self, data_of_tinder_users, main_user_config):
+        age_from = main_user_config['desired_age_from']
+        age_to = main_user_config['desired_age_to']
+
+        users = []
+        for tinder_user in data_of_tinder_users:
+            if 'bdate' not in tinder_user:
+                continue
+            if len((tinder_user['bdate']).split('.')) != 3:
+                continue
+            days, months, years = tinder_user['bdate'].split('.')
+
+            if age_from <= datetime.now().year - int(years) <= age_to:
+                users.append(tinder_user)
+
+        return users
+
+    def get_processed_data_of_tinder_users(self, searched_users: List[Dict], main_user_config: Dict) -> List[Dict]:
         """
         Get List of Tinder users and return it processed
 
         :param List searched_users: List of dict of data
+        :param main_user_config: Config of Main User
         :return: List of dict of extended data for future initialization
          Tinder Users. Closed profiles will be dropped.
         """
@@ -101,4 +120,5 @@ class VkMachinery:
         }
 
         data_of_tinder_users = self.send_request('users.get', params_of_query=get_users_param)['response']
+        data_of_tinder_users = self._more_process(data_of_tinder_users, main_user_config)
         return data_of_tinder_users
