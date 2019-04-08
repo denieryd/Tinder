@@ -17,6 +17,10 @@ class VkException(Exception):
     pass
 
 
+class TinderException(Exception):
+    pass
+
+
 def retry_on_error(arg: int = 5):
     def decor(func):
         @wraps(func)

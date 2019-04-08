@@ -3,6 +3,7 @@ from tinder_users import TinderUser, MainUser
 from config.config_app import PATH_TO_OUTPUT_RESULT
 from database.db import create_db
 from database.db import insert_result_to_db, add_to_black_list, add_to_favorite_list
+from utils import TinderException
 
 from pprint import pprint
 from typing import Dict, List
@@ -126,8 +127,14 @@ def run_app(vk_client):
         processed_data_of_tinder_users = vk_client.get_processed_data_of_tinder_users(
             searched_users=searched_tinder_users, main_user_config=main_user_config)
 
+        count = 0
+        # todo : make here restart of app
         while not processed_data_of_tinder_users:  # from example all received users with closed profiles
             # we have no any user so we have to repeat request
+            if count > 10:
+                print('We did not find any suitable user.So your session has been restarted')
+                run_app(vk_client=vk_client)
+            count += 1
 
             main_user_config['offset_for_search'] += main_user.count_for_search
             searched_tinder_users = vk_client.users_search(config=main_user_config)

@@ -71,32 +71,18 @@ class VkMachinery:
         """
 
         params_of_request = {'count': config['count_for_search'],
-                             'fields': f'sex={(config["sex"] % 2) + 1},city={config["city"]},'
-                             f'age_from={config["desired_age_from"]},age_to={config["desired_age_to"]}',
-                             'offset': config['offset_for_search']}
+                             'fields': f'sex={(config["sex"] % 2) + 1},city={config["city"]}',
+                             'sex': f'{config["sex"] % 2 + 1}',
+                             'age_from': {config["desired_age_from"]},
+                             'age_to': config["desired_age_to"],
+                             'offset': config['offset_for_search']
+                             }
 
         params_of_request = self._get_updated_params(params=params_of_request)
         print('Waiting please.. We are searching')
 
         req = self.send_request(method='users.search', params_of_query=params_of_request)
         return req['response']['items']
-
-    def _more_process(self, data_of_tinder_users, main_user_config):
-        age_from = main_user_config['desired_age_from']
-        age_to = main_user_config['desired_age_to']
-
-        users = []
-        for tinder_user in data_of_tinder_users:
-            if 'bdate' not in tinder_user:
-                continue
-            if len((tinder_user['bdate']).split('.')) != 3:
-                continue
-            days, months, years = tinder_user['bdate'].split('.')
-
-            if age_from <= datetime.now().year - int(years) <= age_to:
-                users.append(tinder_user)
-
-        return users
 
     def get_processed_data_of_tinder_users(self, searched_users: List[Dict], main_user_config: Dict) -> List[Dict]:
         """
@@ -120,5 +106,4 @@ class VkMachinery:
         }
 
         data_of_tinder_users = self.send_request('users.get', params_of_query=get_users_param)['response']
-        data_of_tinder_users = self._more_process(data_of_tinder_users, main_user_config)
         return data_of_tinder_users
