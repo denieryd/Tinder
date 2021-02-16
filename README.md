@@ -14,7 +14,7 @@ to the file "tests/date.txt". The data substitution pattern is listed in the fil
 ( in this repository it is called "tinderdb"), role of database 
 (in this repository you role is called "tinderuser"). 
 You can change any param in "config/config_app"
-In config this params are colled like "DB_NAME" and "DB_USER"
+In config this params are called like "DB_NAME" and "DB_USER"
 * For running the app, you need to run the "main.py"
 ## Example
 ```bash
